@@ -1,0 +1,7 @@
+#build
+#setuptools
+requests
+python-docx
+PyMuPDF
+# dotenv
+# openai
