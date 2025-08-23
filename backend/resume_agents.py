@@ -301,27 +301,31 @@ class SkillGapIdentifierAgent:
 
 
 class CandidateRankerAgent:
-    """Agent that ranks candidates based on job fit"""
+    """Agent that ranks candidates based on job fit with keyword prioritization"""
     
     def __init__(self, resume_store: ResumeStore):
         self.resume_store = resume_store
         self.llm = llm
         
         self.rank_prompt = PromptTemplate(
-            input_variables=["job_description", "resume_summaries"],
+            input_variables=["job_description", "resume_summaries", "key_terms"],
             template="""
             You are a talent acquisition specialist ranking candidates for a position.
             
             Job description:
             {job_description}
             
+            Important job keywords and skills (give higher weight to these when evaluating candidates):
+            {key_terms}
+            
             Candidate summaries:
             {resume_summaries}
             
-            Rank these candidates from most to least suitable. For each candidate:
-            1. Assign a fit score (0-100)
-            2. List their key strengths for this role
-            3. List their key weaknesses for this role
+            Rank these candidates from most to least suitable, with special emphasis on matching the key terms above.
+            For each candidate:
+            1. Assign a fit score (0-100) giving higher weight to candidates who match more key terms
+            2. List their key strengths for this role, emphasizing matched keywords
+            3. List their key weaknesses for this role or missing key skills
             4. Provide a brief explanation for the ranking
             
             Return results as a ranked list with detailed justification for each candidate.
@@ -329,11 +333,37 @@ class CandidateRankerAgent:
         )
         
         self.rank_chain = LLMChain(llm=self.llm, prompt=self.rank_prompt)
+        
+        # Prompt for extracting key terms from job description
+        self.key_terms_prompt = PromptTemplate(
+            input_variables=["job_description"],
+            template="""
+            Extract the most important skills, qualifications, and keywords from this job description.
+            Focus on technical skills, tools, technologies, and specific qualifications mentioned.
+            
+            Job Description:
+            {job_description}
+            
+            Return only a bullet-point list of the key terms, one per line, starting with • character.
+            """
+        )
+        self.key_terms_chain = LLMChain(llm=self.llm, prompt=self.key_terms_prompt)
+    
+    def _extract_key_terms(self, job_description: str) -> str:
+        """Extract key terms from a job description"""
+        try:
+            return self.key_terms_chain.run(job_description=job_description)
+        except Exception as e:
+            print(f"Error extracting key terms: {str(e)}")
+            return "• No key terms extracted"
     
     def rank_candidates(self, resume_ids: List[str], job_description: str) -> str:
-        """Rank candidates based on job fit"""
+        """Rank candidates based on job fit with emphasis on keyword matching"""
         if not resume_ids:
             return "No resumes provided for ranking"
+            
+        # Extract key terms from job description to use as weighted factors
+        key_terms = self._extract_key_terms(job_description)
             
         resume_summaries = []
         for rid in resume_ids:
@@ -347,6 +377,7 @@ class CandidateRankerAgent:
         try:
             result = self.rank_chain.run(
                 job_description=job_description,
+                key_terms=key_terms,
                 resume_summaries="\n\n---\n\n".join(resume_summaries)
             )
             return result
@@ -355,7 +386,7 @@ class CandidateRankerAgent:
         
         
 class QuestionGeneratorAgent:
-    """Agent that generates follow-up questions for ambiguous resumes"""
+    """Agent that generates interview questions based on candidate resume"""
     
     def __init__(self):
         self.llm = llm
@@ -363,23 +394,33 @@ class QuestionGeneratorAgent:
         self.question_prompt = PromptTemplate(
             input_variables=["resume_summary"],
             template="""
-            You are a technical recruiter reviewing a resume. For this candidate, identify 3-5 areas 
-            where more information would be helpful to fully evaluate them. These should be ambiguous 
-            or unclear aspects of their resume.
+            You are an experienced technical interviewer preparing for an interview with a candidate.
+            Based on the candidate's resume, generate 5 strong interview questions that:
+            
+            1. Probe into their specific technical skills and experience
+            2. Assess their problem-solving capabilities related to their claimed expertise
+            3. Validate the accomplishments and projects mentioned
+            4. Explore their depth of knowledge in their area of specialization
+            5. Evaluate their ability to apply their skills to real-world scenarios
             
             Resume Summary:
             {resume_summary}
             
-            Generate specific follow-up questions that would help clarify these ambiguities.
-            Format your response as a JSON array of questions. Example:
-            ["Question 1?", "Question 2?", "Question 3?"]
+            For each question, include:
+            1. A clear, specific question that requires more than a yes/no answer
+            2. A brief context explaining why you're asking this question
+            
+            Format each question as:
+            "**Question X:** [Your question here] Context: [Brief explanation of why you're asking this]"
+            
+            Return your response as a JSON array of 5 formatted question strings.
             """
         )
         
         self.question_chain = LLMChain(llm=self.llm, prompt=self.question_prompt)
     
     def generate_questions(self, resume_id: str, resume_store: ResumeStore) -> List[str]:
-        """Generate follow-up questions for a resume"""
+        """Generate interview questions for a resume"""
         resume = resume_store.get_resume(resume_id)
         
         if not resume:
@@ -391,15 +432,35 @@ class QuestionGeneratorAgent:
             # Try to parse JSON response
             try:
                 import json
+                # Extract JSON array if embedded in text
+                json_start = result.find('[')
+                json_end = result.rfind(']') + 1
+                
+                if json_start != -1 and json_end > 0:
+                    json_str = result[json_start:json_end]
+                    questions = json.loads(json_str)
+                    if isinstance(questions, list):
+                        # Ensure all items are strings
+                        questions = [str(q) for q in questions]
+                        # Limit to 5 questions maximum
+                        return questions[:5] if questions else ["No relevant questions could be generated"]
+                
+                # If we couldn't extract JSON array, try parsing the whole result
                 questions = json.loads(result)
                 if isinstance(questions, list):
-                    return questions
-                return ["Error parsing questions"]
-            except:
-                # If JSON parsing fails, return the raw text
-                return [q.strip() for q in result.split('\n') if q.strip() and '?' in q]
+                    # Ensure all items are strings
+                    questions = [str(q) for q in questions]
+                    # Limit to 5 questions maximum
+                    return questions[:5] if questions else ["No relevant questions could be generated"]
+                
+                return ["Error parsing questions response"]
+            except json.JSONDecodeError:
+                # If JSON parsing fails, extract questions from the text
+                questions = [q.strip() for q in result.split('\n') if q.strip() and '?' in q]
+                return questions[:5] if questions else ["No relevant questions could be generated"]
                 
         except Exception as e:
+            print(f"Error in generate_questions: {str(e)}")
             return [f"Error generating questions: {str(e)}"]
         
         
