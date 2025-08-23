@@ -6,9 +6,14 @@ import axios from 'axios';
 
 // Import all components
 import ResumeManager from './components/ResumeManager';
-import JobDescriptionForm from './components/JobDescriptionForm';
 import JobMatcher from './components/JobMatcher';
 import FakeDetector from './components/FakeDetector';
+
+// Import UI components
+import Header from './components/ui/Header';
+import Navigation from './components/ui/Navigation';
+import Card from './components/ui/Card';
+import Button from './components/ui/Button';
 
 const API_URL = 'http://localhost:8000';
 
@@ -21,7 +26,7 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [summary, setSummary] = useState<string>('');
-  const [view, setView] = useState<'upload' | 'manage' | 'job-description' | 'job-matcher' | 'fake-detector'>('upload');
+  const [view, setView] = useState<'upload' | 'manage' | 'job-matcher' | 'fake-detector'>('upload');
   const [selectedResumeIds, setSelectedResumeIds] = useState<string[]>([]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -85,83 +90,44 @@ export default function Home() {
     setSelectedResumeIds(ids);
   };
 
+  const navigationViews = [
+    { id: 'upload', label: 'Upload Resume' },
+    { id: 'manage', label: 'Manage Resumes' },
+    { id: 'job-matcher', label: 'Job Matcher' },
+    { id: 'fake-detector', label: 'Fake Detector' }
+  ];
+
   return (
-    <main className="min-h-screen p-8 bg-gray-50">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-8">Resume Analyzer</h1>
+    <main className="min-h-screen p-4 md:p-8 bg-gradient-to-b from-gray-50 to-gray-100">
+      <div className="max-w-5xl mx-auto">
+        <Header 
+          title="Resume Analyzer" 
+          subtitle="AI-powered resume analysis and candidate evaluation" 
+        />
 
         {/* Navigation Tabs */}
-        <div className="flex justify-center mb-6 overflow-x-auto">
-          <div className="inline-flex rounded-md shadow-sm" role="group">
-            <button
-              onClick={() => setView('upload')}
-              className={`px-4 py-2 text-sm font-medium ${
-                view === 'upload' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-              style={{borderTopLeftRadius: '0.375rem', borderBottomLeftRadius: '0.375rem'}}
-            >
-              Upload Resume
-            </button>
-            <button
-              onClick={() => setView('manage')}
-              className={`px-4 py-2 text-sm font-medium ${
-                view === 'manage' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Manage Resumes
-            </button>
-            <button
-              onClick={() => setView('job-description')}
-              className={`px-4 py-2 text-sm font-medium ${
-                view === 'job-description' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Job Description
-            </button>
-            <button
-              onClick={() => setView('job-matcher')}
-              className={`px-4 py-2 text-sm font-medium ${
-                view === 'job-matcher' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Job Matcher
-            </button>
-            <button
-              onClick={() => setView('fake-detector')}
-              className={`px-4 py-2 text-sm font-medium ${
-                view === 'fake-detector' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-              style={{borderTopRightRadius: '0.375rem', borderBottomRightRadius: '0.375rem'}}
-            >
-              Fake Detector
-            </button>
-          </div>
-        </div>
+        <Navigation 
+          activeView={view}
+          onViewChange={(v) => setView(v as any)}
+          views={navigationViews}
+        />
         
         {/* Upload Resume View */}
         {view === 'upload' && (
           <>
-            <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+            <Card variant="elevated" className="mb-8">
               <div 
                 {...getRootProps()} 
-                className={`border-2 border-dashed p-8 rounded-lg text-center cursor-pointer transition-colors ${
-                  isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'
+                className={`border-2 border-dashed p-8 rounded-lg text-center cursor-pointer transition-all duration-300 ${
+                  isDragActive ? 'border-blue-500 bg-blue-50 shadow-inner' : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50/30'
                 }`}
               >
                 <input {...getInputProps()} />
                 <div className="flex flex-col items-center">
                   <svg 
-                    className="w-12 h-12 text-gray-400 mb-4" 
+                    className={`w-16 h-16 mb-4 transition-colors duration-300 ${
+                      isDragActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500'
+                    }`}
                     fill="none" 
                     stroke="currentColor" 
                     viewBox="0 0 24 24" 
@@ -180,7 +146,7 @@ export default function Home() {
                   ) : (
                     <div>
                       <p className="text-base font-medium text-gray-900">
-                        Drop your resume here, or <span className="text-blue-500">browse</span>
+                        Drop your resume here, or <span className="text-blue-600 hover:text-blue-800 transition-colors">browse</span>
                       </p>
                       <p className="text-sm text-gray-500 mt-1">
                         Supports PDF, DOCX, and TXT files
@@ -192,76 +158,40 @@ export default function Home() {
               
               {file && (
                 <div className="mt-4 flex justify-center">
-                  <button
+                  <Button
                     onClick={handleSubmit}
                     disabled={loading}
-                    className={`px-4 py-2 rounded-md text-white font-medium ${
-                      loading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
-                    } transition-colors`}
+                    variant="primary"
+                    size="md"
                   >
                     {loading ? 'Analyzing...' : 'Analyze Resume'}
-                  </button>
+                  </Button>
                 </div>
               )}
               
               {error && (
-                <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md">
+                <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg border border-red-200 shadow-sm flex items-center">
+                  <svg className="w-5 h-5 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
                   {error}
                 </div>
               )}
-            </div>
+            </Card>
             
             {summary && (
-              <div className="bg-white p-6 rounded-lg shadow-md">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">🧑‍💼 Candidate Summary</h2>
-                  <div className="flex space-x-2">
-                    <button 
-                      className="flex items-center text-sm text-green-600 bg-green-50 hover:bg-green-100 px-3 py-1 rounded-md"
-                      onClick={() => {
-                        axios.post(`${API_URL}/feedback`, {
-                          resume_id: file?.name,
-                          is_positive: true
-                        }).then(() => {
-                          alert('Thanks for your feedback!');
-                        }).catch(err => {
-                          console.error('Feedback error:', err);
-                        });
-                      }}
-                    >
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"></path>
-                      </svg>
-                      Helpful
-                    </button>
-                    <button 
-                      className="flex items-center text-sm text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-md"
-                      onClick={() => {
-                        axios.post(`${API_URL}/feedback`, {
-                          resume_id: file?.name,
-                          is_positive: false
-                        }).then(() => {
-                          alert('Thanks for your feedback!');
-                        }).catch(err => {
-                          console.error('Feedback error:', err);
-                        });
-                      }}
-                    >
-                      <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"></path>
-                      </svg>
-                      Not Helpful
-                    </button>
-                  </div>
-                </div>
-                <div className="prose max-w-none">
+              <Card variant="elevated" title="🧑‍💼 Candidate Summary">
+                <div className="prose max-w-none prose-headings:text-blue-800 prose-p:text-gray-700 prose-strong:text-gray-900">
                   {summary.split('\n').map((line, index) => (
                     <div key={index}>
                       {line.trim() ? (
                         line.startsWith('**') ? (
-                          <h3 className="font-bold text-lg mt-4 mb-2">{line.replace(/\*\*/g, '')}</h3>
+                          <h3 className="font-bold text-lg mt-6 mb-3 text-indigo-700 border-b border-gray-100 pb-1">{line.replace(/\*\*/g, '')}</h3>
                         ) : line.startsWith('•') || line.startsWith('-') ? (
-                          <p className="ml-4 my-1">{line}</p>
+                          <p className="ml-4 my-1 flex items-start">
+                            <span className="text-blue-500 mr-2 inline-block">•</span>
+                            <span>{line.replace(/^[•-]\s*/, '')}</span>
+                          </p>
                         ) : (
                           <p className="my-2">{line}</p>
                         )
@@ -271,7 +201,7 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             )}
           </>
         )}
@@ -282,9 +212,7 @@ export default function Home() {
         )}
 
         {/* Job Description View */}
-        {view === 'job-description' && (
-          <JobDescriptionForm resumeIds={selectedResumeIds} />
-        )}
+        {/* Job Description section removed as it was redundant */}
 
         {/* Job Matcher View */}
         {view === 'job-matcher' && (
