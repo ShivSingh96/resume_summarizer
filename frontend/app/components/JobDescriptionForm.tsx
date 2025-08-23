@@ -118,7 +118,7 @@ export default function JobDescriptionForm({ resumeIds }: JobDescriptionFormProp
           <h3 className="text-lg font-medium mb-3">Results</h3>
           <div className="bg-gray-50 p-4 rounded-md prose max-w-none">
             <pre className="whitespace-pre-wrap">{results}</pre>
-          </div>
+          </div> 
         </div>
       )}
     </div>
