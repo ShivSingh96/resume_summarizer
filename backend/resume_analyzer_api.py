@@ -214,7 +214,7 @@ async def upload_job_description(file: UploadFile = File(...)):
 
 @app.get("/generate-questions/{resume_id}")
 async def generate_questions(resume_id: str):
-    """Generate follow-up questions for ambiguous parts of a resume"""
+    """Generate technical interview questions based on the candidate's resume"""
     questions = question_agent.generate_questions(resume_id, resume_store)
     return {"questions": questions}
 
