@@ -192,7 +192,7 @@ export default function FakeDetector() {
                 )}
               </>
             )}
-          </div>
+          </div> 
         </div>
       )}
     </div>
