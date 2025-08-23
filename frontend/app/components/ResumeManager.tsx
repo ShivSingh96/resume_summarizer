@@ -133,13 +133,21 @@ export default function ResumeManager({ onSelectResumes }: ResumeManagerProps) {
                 
                 {expandedResume === resume.id && (
                   <div className="mt-3 pl-8">
-                    <div className="bg-gray-50 p-3 rounded-md">
-                      <h4 className="font-medium text-sm mb-2">Full Summary:</h4>
-                      <p className="text-sm whitespace-pre-line">{resume.summary}</p>
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 shadow-sm">
+                      <h4 className="font-medium text-md mb-3">Resume Summary</h4>
+                      <div className="text-sm text-gray-800 whitespace-pre-line prose prose-sm max-w-none">
+                        {resume.summary.split('\n').map((line, idx) => (
+                          <div key={idx} className={line.trim().startsWith('•') ? 'ml-4' : ''}>
+                            {line}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     
-                    {/* Add ResumeQuestions component here */}
-                    <ResumeQuestions resumeId={resume.id} />
+                    {/* Improved ResumeQuestions component */}
+                    <div className="mt-4 border-t border-gray-200 pt-4">
+                      <ResumeQuestions resumeId={resume.id} />
+                    </div>
                   </div>
                 )}
               </div>
