@@ -1,8 +1,16 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary-color: #3b82f6;
+  --secondary-color: #4f46e5;
+  --background-color: #f9fafb;
+  --card-bg: #ffffff;
+  --text-main: #1f2937;
+  --text-light: #6b7280;
 }
 
 @theme inline {
@@ -20,7 +28,43 @@
 }
 
 body {
-  background: var(--background);
+  background: var(--background-color);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', Arial, Helvetica, sans-serif;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800
+    text-white font-medium py-2 px-4 rounded-md transition-all duration-300 shadow-sm 
+    hover:shadow hover:translate-y-[-1px];
+  }
+
+  .btn-secondary {
+    @apply bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700
+    text-white font-medium py-2 px-4 rounded-md transition-all duration-300 shadow-sm 
+    hover:shadow hover:translate-y-[-1px];
+  }
+
+  .btn-outline {
+    @apply bg-white border-2 border-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md
+    transition-all duration-300 hover:bg-blue-50 hover:border-blue-500 hover:text-blue-600;
+  }
+
+  .card {
+    @apply bg-white rounded-xl shadow-md hover:shadow-lg p-6 transition-all duration-300;
+  }
+
+  .card-elevated {
+    @apply bg-white rounded-xl shadow-xl hover:shadow-2xl p-6 transition-all duration-300 hover:translate-y-[-2px];
+  }
+
+  .dropzone {
+    @apply border-2 border-dashed rounded-lg p-6 text-center transition-all duration-300 cursor-pointer
+    hover:border-blue-400 hover:bg-blue-50/30;
+  }
+
+  .dropzone-active {
+    @apply border-blue-500 bg-blue-50 shadow-inner;
+  }
 }
